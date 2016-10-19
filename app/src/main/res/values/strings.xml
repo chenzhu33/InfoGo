@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">InfoGo</string>
+    <string name="title_info_detail">Info Detail</string>
+
+    <string name="action_record">Record</string>
+    <string name="action_info">Place</string>
+    <string name="action_start">Start track</string>
+    <string name="action_stop">Stop track</string>
+
+</resources>

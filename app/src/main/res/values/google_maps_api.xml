@@ -1,0 +1,21 @@
+<resources>
+    <!--
+    TODO: Before you run your application, you need a Google Maps API key.
+
+    To get one, follow this link, follow the directions and press "Create" at the end:
+
+    https://console.developers.google.com/flows/enableapi?apiid=maps_android_backend&keyType=CLIENT_SIDE_ANDROID&r=84:78:8D:31:26:80:ED:95:98:C0:E3:08:CE:DA:3D:4B:BD:4A:D4:2D%3Bcom.carelife.eventplanner.ui
+
+    You can also add your credentials to an existing key, using this line:
+    84:78:8D:31:26:80:ED:95:98:C0:E3:08:CE:DA:3D:4B:BD:4A:D4:2D;com.carelife.eventplanner.ui
+
+    Alternatively, follow the directions here:
+    https://developers.google.com/maps/documentation/android/start#get-key
+
+    Once you have your key (it starts with "AIza"), replace the "google_maps_key"
+    string in this file.
+    -->
+    <string name="google_maps_key" templateMergeStrategy="preserve" translatable="false">
+        AIzaSyBVD0DilU1xTzRi1D7-wKBVUhiksnEV8hc
+    </string>
+</resources>
