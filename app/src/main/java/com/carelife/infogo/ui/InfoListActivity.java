@@ -105,7 +105,7 @@ public class InfoListActivity extends AppCompatActivity {
         }
 
         @Override
-        public void onBindViewHolder(final ViewHolder holder, final int position) {
+        public void onBindViewHolder(final ViewHolder holder, int position) {
             holder.mItem = mValues.get(position);
             holder.mIdView.setText(""+mValues.get(position).getId());
             holder.mContentView.setText(mValues.get(position).getName());
@@ -115,7 +115,7 @@ public class InfoListActivity extends AppCompatActivity {
                 public void onClick(View v) {
                     if (mTwoPane) {
                         BaseInfoFragment fragment;
-                        int id = position+1;
+                        int id = holder.getAdapterPosition()+1;
                         switch (id) {
                             case 1:
                                 fragment = new LocationInfoFragment();
