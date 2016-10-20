@@ -357,7 +357,7 @@ public class LocationInfoFragment extends BaseInfoFragment implements OnMapReady
     }
 
     private void initMarker() {
-        List<Position> positions = new Select().from(Position.class).where("record=true").execute();
+        List<Position> positions = new Select().from(Position.class).where("record = ?", "1").execute();
         int length = positions.size();
         if(length <= 0) {
             return;
