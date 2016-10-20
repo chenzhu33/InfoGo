@@ -11,14 +11,25 @@ import com.activeandroid.annotation.Table;
 @Table(name = "Places")
 public class Place extends Model {
 
-    @Column(name = "name")
-    private String name;
+    @Column(name = "name", index = true)
+    public String name;
 
     @Column(name = "desc")
-    private String description;
+    public String description;
 
     @Column(name = "position")
-    private Position position;
+    public Position position;
+
+    @Column(name = "address")
+    public String address;
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
 
     public void setName(String name) {
         this.name = name;

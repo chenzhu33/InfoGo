@@ -6,5 +6,6 @@
     <string name="action_info">Place</string>
     <string name="action_start">Start track</string>
     <string name="action_stop">Stop track</string>
+    <string name="action_hot">Mark hot</string>
 
 </resources>

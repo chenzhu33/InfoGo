@@ -25,7 +25,6 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.location.places.Place;
-import com.google.android.gms.location.places.PlaceDetectionApi;
 import com.google.android.gms.location.places.PlaceLikelihood;
 import com.google.android.gms.location.places.PlaceLikelihoodBuffer;
 import com.google.android.gms.location.places.Places;
@@ -39,6 +38,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -52,7 +52,7 @@ public class LocationInfoFragment extends BaseInfoFragment implements OnMapReady
     private LocationManager locationManager;
     private LatLng lastLocation;
     private Marker previousMarker;
-
+    private Marker selectedMarker;
     private GoogleApiClient mGoogleApiClient;
 
     LocationListener locationListener = new LocationListener() {
@@ -155,6 +155,14 @@ public class LocationInfoFragment extends BaseInfoFragment implements OnMapReady
             }
         });
 
+        final Button markHot = (Button) v.findViewById(R.id.mark_hot);
+        markHot.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                markHot();
+            }
+        });
+
         Button startTrackButton = (Button) v.findViewById(R.id.start_track);
         startTrackButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -184,19 +192,85 @@ public class LocationInfoFragment extends BaseInfoFragment implements OnMapReady
     }
 
     private void requestPlace() {
+        // Request cache
+        List<com.carelife.infogo.dom.Place> places = queryCache(getCurrentLocation());
+        if(!places.isEmpty()) {
+            showPlaces(places);
+            return;
+        }
+        // Request online
         PendingResult<PlaceLikelihoodBuffer> result = Places.PlaceDetectionApi
                 .getCurrentPlace(mGoogleApiClient, null);
         result.setResultCallback(new ResultCallback<PlaceLikelihoodBuffer>() {
             @Override
-            public void onResult(PlaceLikelihoodBuffer likelyPlaces) {
+            public void onResult(@NonNull PlaceLikelihoodBuffer likelyPlaces) {
+                List<com.carelife.infogo.dom.Place> places = new ArrayList<>();
                 for (PlaceLikelihood placeLikelihood : likelyPlaces) {
-                    Log.e(TAG, String.format("Place '%s' has likelihood: %g",
-                            placeLikelihood.getPlace().getName(),
-                            placeLikelihood.getLikelihood()));
+                    places.add(parseAndCachePlace(placeLikelihood));
                 }
                 likelyPlaces.release();
+
+                // Show
+                showPlaces(places);
             }
         });
+    }
+
+    private void markHot() {
+        if (selectedMarker == null) {
+            return;
+        }
+        Position position = (Position) selectedMarker.getTag();
+        position.setHot(true);
+        position.save();
+    }
+
+    private void showPlaces(List<com.carelife.infogo.dom.Place> places) {
+        // TODO
+
+    }
+
+    private List<com.carelife.infogo.dom.Place> queryCache(Location current) {
+        List<com.carelife.infogo.dom.Place> nearbyPlaces = new ArrayList<>();
+        if(current == null) {
+            return nearbyPlaces;
+        }
+
+        List<com.carelife.infogo.dom.Place> places = new Select().from(com.carelife.infogo.dom.Place.class).execute();
+        for(int i=0;i<places.size();i++) {
+            com.carelife.infogo.dom.Place place = places.get(i);
+            if(isNearby(place.getPosition().getLat(), place.getPosition().getLon(),
+                    current.getLatitude(), current.getLongitude())) {
+                nearbyPlaces.add(place);
+            }
+        }
+        return nearbyPlaces;
+    }
+
+    private boolean isNearby(double x1, double y1, double x2, double y2) {
+        return (x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1) - Global.PLACE_RADIUS * Global.PLACE_RADIUS <= 0;
+    }
+
+    private com.carelife.infogo.dom.Place parseAndCachePlace(PlaceLikelihood placeLikelihood) {
+        Place placeGoogle = placeLikelihood.getPlace();
+        com.carelife.infogo.dom.Place place = new Select()
+                .from(com.carelife.infogo.dom.Place.class)
+                .where("name = ?", placeGoogle.getName().toString())
+                .executeSingle();
+        if (place != null) {
+            return place;
+        }
+        place = new com.carelife.infogo.dom.Place();
+        place.setName(placeGoogle.getName().toString());
+        place.setAddress(placeGoogle.getAddress().toString());
+        place.setDescription(placeGoogle.getAttributions().toString());
+        Position position = new Position();
+        position.setLat(placeGoogle.getLatLng().latitude);
+        position.setLon(placeGoogle.getLatLng().longitude);
+        position.save();
+        place.setPosition(position);
+        place.save();
+        return place;
     }
 
     private void recordPosition(Location location) {
@@ -204,6 +278,7 @@ public class LocationInfoFragment extends BaseInfoFragment implements OnMapReady
             Position position = new Position();
             position.setLat(location.getLatitude());
             position.setLon(location.getLongitude());
+            position.setRecord(true);
             position.save();
 
             if(previousMarker != null) {
@@ -252,6 +327,9 @@ public class LocationInfoFragment extends BaseInfoFragment implements OnMapReady
         if (hasPermission()) {
             mMap.setMyLocationEnabled(true);
             Location current = getCurrentLocation();
+            if(current == null) {
+                return;
+            }
             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(current.getLatitude(), current.getLongitude()), 13));
         }
         initListener();
@@ -269,10 +347,17 @@ public class LocationInfoFragment extends BaseInfoFragment implements OnMapReady
                 recordPosition(location);
             }
         });
+        mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+            @Override
+            public boolean onMarkerClick(Marker marker) {
+                selectedMarker = marker;
+                return false;
+            }
+        });
     }
 
     private void initMarker() {
-        List<Position> positions = new Select().from(Position.class).execute();
+        List<Position> positions = new Select().from(Position.class).where("record=true").execute();
         int length = positions.size();
         if(length <= 0) {
             return;

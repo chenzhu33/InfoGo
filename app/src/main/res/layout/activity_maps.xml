@@ -36,14 +36,27 @@
         android:textSize="13sp"/>
 
     <Button
-        android:id="@+id/record"
+        android:id="@+id/mark_hot"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
+        android:layout_above="@id/start_track"
         android:layout_marginBottom="5dp"
         android:layout_marginLeft="3dp"
         android:layout_marginRight="3dp"
-        android:layout_toLeftOf="@id/start_track"
+        android:layout_alignParentRight="true"
+        android:text="@string/action_hot"
+        android:textColor="@android:color/darker_gray"
+        android:textSize="13sp"/>
+
+    <Button
+        android:id="@+id/record"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/start_track"
+        android:layout_marginBottom="5dp"
+        android:layout_marginLeft="3dp"
+        android:layout_marginRight="3dp"
+        android:layout_toLeftOf="@id/mark_hot"
         android:text="@string/action_record"
         android:textColor="@android:color/darker_gray"
         android:textSize="13sp"/>
@@ -52,7 +65,7 @@
         android:id="@+id/place_info"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
+        android:layout_above="@id/start_track"
         android:layout_marginBottom="5dp"
         android:layout_marginLeft="3dp"
         android:layout_marginRight="3dp"

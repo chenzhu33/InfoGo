@@ -15,8 +15,8 @@ public class Position extends Model {
     @Column(name = "lon")
     public double lon;
 
-    @Column(name = "label")
-    public String label;
+    @Column(name = "record")
+    public boolean record = false;
 
     @Column(name = "isHot")
     public boolean isHot = false;
@@ -25,16 +25,16 @@ public class Position extends Model {
         return isHot;
     }
 
-    public String getLabel() {
-        return label;
-    }
-
     public void setHot(boolean hot) {
         isHot = hot;
     }
 
-    public void setLabel(String label) {
-        this.label = label;
+    public boolean isRecord() {
+        return record;
+    }
+
+    public void setRecord(boolean record) {
+        this.record = record;
     }
 
     public double getLat() {
