@@ -262,8 +262,12 @@ public class LocationInfoFragment extends BaseInfoFragment implements OnMapReady
         }
         place = new com.carelife.infogo.dom.Place();
         place.setName(placeGoogle.getName().toString());
-        place.setAddress(placeGoogle.getAddress().toString());
-        place.setDescription(placeGoogle.getAttributions().toString());
+        if (placeGoogle.getAddress() != null) {
+            place.setAddress(placeGoogle.getAddress().toString());
+        }
+        if (placeGoogle.getAttributions() != null) {
+            place.setDescription(placeGoogle.getAttributions().toString());
+        }
         Position position = new Position();
         position.setLat(placeGoogle.getLatLng().latitude);
         position.setLon(placeGoogle.getLatLng().longitude);
