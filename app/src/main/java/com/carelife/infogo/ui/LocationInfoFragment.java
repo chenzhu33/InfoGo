@@ -7,7 +7,9 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,12 +20,20 @@ import com.activeandroid.query.Select;
 import com.carelife.infogo.R;
 import com.carelife.infogo.dom.Position;
 import com.carelife.infogo.utils.Global;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.PendingResult;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.location.places.Place;
+import com.google.android.gms.location.places.PlaceDetectionApi;
+import com.google.android.gms.location.places.PlaceLikelihood;
+import com.google.android.gms.location.places.PlaceLikelihoodBuffer;
+import com.google.android.gms.location.places.Places;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.MapsInitializer;
 import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
@@ -34,7 +44,8 @@ import java.util.List;
 /**
  * 添加,google map显示的activity
  */
-public class LocationInfoFragment extends BaseInfoFragment implements OnMapReadyCallback {
+public class LocationInfoFragment extends BaseInfoFragment implements OnMapReadyCallback, GoogleApiClient.OnConnectionFailedListener {
+    private String TAG = "Lation";
 
     private GoogleMap mMap;
     private MapView mapView;
@@ -42,6 +53,7 @@ public class LocationInfoFragment extends BaseInfoFragment implements OnMapReady
     private LatLng lastLocation;
     private Marker previousMarker;
 
+    private GoogleApiClient mGoogleApiClient;
 
     LocationListener locationListener = new LocationListener() {
 
@@ -112,18 +124,25 @@ public class LocationInfoFragment extends BaseInfoFragment implements OnMapReady
 
         requestLocation();
 
+        initView(v);
+
+        // Create a GoogleApiClient instance
+        mGoogleApiClient = new GoogleApiClient
+                .Builder(getContext())
+                .addApi(Places.GEO_DATA_API)
+                .addApi(Places.PLACE_DETECTION_API)
+                .enableAutoManage(getActivity(), this)
+                .build();
+
+        return v;
+    }
+
+    private void initView(View v) {
         Button recordButton = (Button) v.findViewById(R.id.record);
         recordButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String locationProvider = getProvider();
-                if (locationProvider.isEmpty()) {
-                    return;
-                }
-                if (!hasPermission()) {
-                    return;
-                }
-                Location location = locationManager.getLastKnownLocation(locationProvider);
+                Location location = getCurrentLocation();
                 recordPosition(location);
             }
         });
@@ -132,7 +151,7 @@ public class LocationInfoFragment extends BaseInfoFragment implements OnMapReady
         placeButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // TODO
+                requestPlace();
             }
         });
 
@@ -151,8 +170,33 @@ public class LocationInfoFragment extends BaseInfoFragment implements OnMapReady
                 // TODO
             }
         });
+    }
 
-        return v;
+    private Location getCurrentLocation() {
+        String locationProvider = getProvider();
+        if (locationProvider.isEmpty()) {
+            return null;
+        }
+        if (!hasPermission()) {
+            return null;
+        }
+        return locationManager.getLastKnownLocation(locationProvider);
+    }
+
+    private void requestPlace() {
+        PendingResult<PlaceLikelihoodBuffer> result = Places.PlaceDetectionApi
+                .getCurrentPlace(mGoogleApiClient, null);
+        result.setResultCallback(new ResultCallback<PlaceLikelihoodBuffer>() {
+            @Override
+            public void onResult(PlaceLikelihoodBuffer likelyPlaces) {
+                for (PlaceLikelihood placeLikelihood : likelyPlaces) {
+                    Log.e(TAG, String.format("Place '%s' has likelihood: %g",
+                            placeLikelihood.getPlace().getName(),
+                            placeLikelihood.getLikelihood()));
+                }
+                likelyPlaces.release();
+            }
+        });
     }
 
     private void recordPosition(Location location) {
@@ -170,7 +214,7 @@ public class LocationInfoFragment extends BaseInfoFragment implements OnMapReady
             lastLocation = new LatLng(position.getLat(), position.getLon());
             previousMarker = mMap.addMarker(new MarkerOptions()
                     .position(lastLocation)
-                    .title("Last location")
+                    .title("Last recorded location")
                     .icon(BitmapDescriptorFactory.fromResource(R.mipmap.last_marker)));
             previousMarker.setTag(position);
         }
@@ -207,7 +251,7 @@ public class LocationInfoFragment extends BaseInfoFragment implements OnMapReady
         mMap.getUiSettings().setMyLocationButtonEnabled(false);
         if (hasPermission()) {
             mMap.setMyLocationEnabled(true);
-            Location current = locationManager.getLastKnownLocation(getProvider());
+            Location current = getCurrentLocation();
             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(current.getLatitude(), current.getLongitude()), 13));
         }
         initListener();
@@ -252,5 +296,10 @@ public class LocationInfoFragment extends BaseInfoFragment implements OnMapReady
                 Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
                 || ActivityCompat.checkSelfPermission(getContext(),
                 Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+        Log.e(TAG,connectionResult.getErrorMessage());
     }
 }
