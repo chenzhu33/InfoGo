@@ -2,28 +2,29 @@ package com.carelife.infogo.ui;
 
 import android.Manifest;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.activeandroid.query.Select;
 import com.carelife.infogo.R;
-import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
-import com.google.android.gms.maps.CameraUpdate;
+import com.carelife.infogo.dom.Position;
+import com.carelife.infogo.utils.Global;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.MapsInitializer;
 import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -36,60 +37,39 @@ import java.util.List;
 public class LocationInfoFragment extends BaseInfoFragment implements OnMapReadyCallback {
 
     private GoogleMap mMap;
-    private double lat;
-    private double lon;
+    private MapView mapView;
+    private LocationManager locationManager;
+    private LatLng lastLocation;
     private Marker previousMarker;
 
-    private MapView mapView;
+
+    LocationListener locationListener = new LocationListener() {
+
+        @Override
+        public void onStatusChanged(String provider, int status, Bundle arg2) {
+
+        }
+
+        @Override
+        public void onProviderEnabled(String provider) {
+
+        }
+
+        @Override
+        public void onProviderDisabled(String provider) {
+
+        }
+
+        @Override
+        public void onLocationChanged(Location location) {
+            // TODO
+
+        }
+    };
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-    }
-
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View v = inflater.inflate(R.layout.activity_maps, container, false);
-
-        // Gets the MapView from the XML layout and creates it
-        mapView = (MapView) v.findViewById(R.id.map_view);
-        mapView.onCreate(savedInstanceState);
-
-        // Gets to GoogleMap from the MapView and does initialization stuff
-        mapView.getMapAsync(this);
-
-        // Needs to call MapsInitializer before doing any CameraUpdateFactory calls
-        MapsInitializer.initialize(this.getActivity());
-
-        Button recordButton = (Button) v.findViewById(R.id.record);
-        recordButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // TODO
-            }
-        });
-        Button placeButton = (Button) v.findViewById(R.id.place_info);
-        placeButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // TODO
-            }
-        });
-        Button startTrackButton = (Button) v.findViewById(R.id.start_track);
-        startTrackButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // TODO
-            }
-        });
-        Button stopTrackButton = (Button) v.findViewById(R.id.stop_track);
-        stopTrackButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // TODO
-            }
-        });
-        return v;
     }
 
     @Override
@@ -116,71 +96,161 @@ public class LocationInfoFragment extends BaseInfoFragment implements OnMapReady
         mapView.onLowMemory();
     }
 
-
-
-    private void requestLocation() {
-        if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            return;
-        }
-        LocationManager locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
-        List<String> providers = locationManager.getProviders(true);
-        String locationProvider = "";
-        if (providers.contains(LocationManager.GPS_PROVIDER)) {
-            //如果是GPS
-            locationProvider = LocationManager.GPS_PROVIDER;
-        }
-        if (providers.contains(LocationManager.NETWORK_PROVIDER)) {
-            //如果是Network
-            locationProvider = LocationManager.NETWORK_PROVIDER;
-        }
-        if (locationProvider.isEmpty()) {
-            return;
-        }
-        Location location = locationManager.getLastKnownLocation(locationProvider);
-        if(location != null) {
-            lon = location.getLongitude();
-            lat = location.getLatitude();
-        }
-    }
-
-    /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
-     */
     @Override
-    public void onMapReady(GoogleMap googleMap) {
-        mMap = googleMap;
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        View v = inflater.inflate(R.layout.activity_maps, container, false);
 
-        // Add a marker in Sydney and move the camera
-        LatLng location = new LatLng(43.1, -87.9);
-        previousMarker = mMap.addMarker(new MarkerOptions().position(location).title("Event Location"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(location, 13));
-        mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+        // Gets the MapView from the XML layout and creates it
+        mapView = (MapView) v.findViewById(R.id.map_view);
+        mapView.onCreate(savedInstanceState);
+
+        // Gets to GoogleMap from the MapView and does initialization stuff
+        mapView.getMapAsync(this);
+
+        // Needs to call MapsInitializer before doing any CameraUpdateFactory calls
+        MapsInitializer.initialize(this.getActivity());
+
+        requestLocation();
+
+        Button recordButton = (Button) v.findViewById(R.id.record);
+        recordButton.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onMapClick(LatLng latLng) {
-                previousMarker.remove();
-                previousMarker = mMap.addMarker(new MarkerOptions().position(latLng).title("Event Location"));
-                Toast.makeText(getActivity(), "Event location change to "+latLng.latitude+","+latLng.longitude, Toast.LENGTH_SHORT).show();
-                lat = latLng.latitude;
-                lon = latLng.longitude;
+            public void onClick(View v) {
+                String locationProvider = getProvider();
+                if (locationProvider.isEmpty()) {
+                    return;
+                }
+                if (!hasPermission()) {
+                    return;
+                }
+                Location location = locationManager.getLastKnownLocation(locationProvider);
+                recordPosition(location);
             }
         });
 
+        Button placeButton = (Button) v.findViewById(R.id.place_info);
+        placeButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // TODO
+            }
+        });
 
-        mMap.getUiSettings().setMyLocationButtonEnabled(false);
+        Button startTrackButton = (Button) v.findViewById(R.id.start_track);
+        startTrackButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // TODO
+            }
+        });
 
-        if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            return;
-        }
-        mMap.setMyLocationEnabled(true);
+        Button stopTrackButton = (Button) v.findViewById(R.id.stop_track);
+        stopTrackButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // TODO
+            }
+        });
 
+        return v;
     }
 
+    private void recordPosition(Location location) {
+        if (location != null) {
+            Position position = new Position();
+            position.setLat(location.getLatitude());
+            position.setLon(location.getLongitude());
+            position.save();
+
+            if(previousMarker != null) {
+                mMap.addMarker(new MarkerOptions().position(lastLocation)).setTag(previousMarker.getTag());
+                previousMarker.remove();
+            }
+
+            lastLocation = new LatLng(position.getLat(), position.getLon());
+            previousMarker = mMap.addMarker(new MarkerOptions()
+                    .position(lastLocation)
+                    .title("Last location")
+                    .icon(BitmapDescriptorFactory.fromResource(R.mipmap.last_marker)));
+            previousMarker.setTag(position);
+        }
+    }
+
+    private void requestLocation() {
+        //获取地理位置管理器
+        locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
+        String locationProvider = getProvider();
+        if (locationProvider.isEmpty()) {
+            return;
+        }
+        if (hasPermission()) {
+            locationManager.requestLocationUpdates(locationProvider, Global.LOCATION_REQUEST_TIME, 0, locationListener);
+        }
+    }
+
+    private String getProvider() {
+        //获取所有可用的位置提供器
+        List<String> providers = locationManager.getProviders(true);
+        String locationProvider = "";
+        if (providers.contains(LocationManager.GPS_PROVIDER)) {
+            locationProvider = LocationManager.GPS_PROVIDER;
+        }
+        if (providers.contains(LocationManager.NETWORK_PROVIDER)) {
+            locationProvider = LocationManager.NETWORK_PROVIDER;
+        }
+        return locationProvider;
+    }
+
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        mMap = googleMap;
+        mMap.getUiSettings().setMyLocationButtonEnabled(false);
+        if (hasPermission()) {
+            mMap.setMyLocationEnabled(true);
+            Location current = locationManager.getLastKnownLocation(getProvider());
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(current.getLatitude(), current.getLongitude()), 13));
+        }
+        initListener();
+        initMarker();
+    }
+
+    private void initListener() {
+        mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+            @Override
+            public void onMapClick(LatLng latLng) {
+                Toast.makeText(getActivity(), "Event location change to "+latLng.latitude+","+latLng.longitude, Toast.LENGTH_SHORT).show();
+                Location location = new Location(getProvider());
+                location.setLatitude(latLng.latitude);
+                location.setLongitude(latLng.longitude);
+                recordPosition(location);
+            }
+        });
+    }
+
+    private void initMarker() {
+        List<Position> positions = new Select().from(Position.class).execute();
+        int length = positions.size();
+        if(length <= 0) {
+            return;
+        }
+        for (int i = 0; i < length - 1; i++) {
+            mMap.addMarker(
+                    new MarkerOptions().position(new LatLng(positions.get(i).getLat(), positions.get(i).getLon())))
+                    .setTag(positions.get(i));
+        }
+        lastLocation = new LatLng(positions.get(length - 1).getLat(), positions.get(length - 1).getLon());
+
+        previousMarker = mMap.addMarker(new MarkerOptions()
+                .position(lastLocation)
+                .title("Last location")
+                .icon(BitmapDescriptorFactory.fromResource(R.mipmap.last_marker)));
+        previousMarker.setTag(positions.get(length - 1));
+    }
+
+    private boolean hasPermission() {
+        return ActivityCompat.checkSelfPermission(getContext(),
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                || ActivityCompat.checkSelfPermission(getContext(),
+                Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+    }
 }

@@ -19,7 +19,7 @@ public class Position extends Model {
     public String label;
 
     @Column(name = "isHot")
-    public boolean isHot;
+    public boolean isHot = false;
 
     public boolean isHot() {
         return isHot;
