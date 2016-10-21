@@ -22,6 +22,7 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.carelife.infogo.R;
+import com.carelife.infogo.utils.LocationProducer;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -141,6 +142,7 @@ public abstract class BaseActivityWithTakePhoto extends AppCompatActivity implem
         if (bitmap != null && !bitmap.isRecycled()) {
             bitmap.recycle();
         }
+        LocationProducer.getInstance(this).stop();
     }
 
 

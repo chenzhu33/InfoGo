@@ -20,6 +20,7 @@ import com.activeandroid.query.Select;
 import com.carelife.infogo.R;
 import com.carelife.infogo.dom.Position;
 import com.carelife.infogo.utils.Global;
+import com.carelife.infogo.utils.LocationProducer;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
@@ -49,35 +50,11 @@ public class LocationInfoFragment extends BaseInfoFragment implements OnMapReady
 
     private GoogleMap mMap;
     private MapView mapView;
-    private LocationManager locationManager;
     private LatLng lastLocation;
     private Marker previousMarker;
     private Marker selectedMarker;
     private GoogleApiClient mGoogleApiClient;
 
-    LocationListener locationListener = new LocationListener() {
-
-        @Override
-        public void onStatusChanged(String provider, int status, Bundle arg2) {
-
-        }
-
-        @Override
-        public void onProviderEnabled(String provider) {
-
-        }
-
-        @Override
-        public void onProviderDisabled(String provider) {
-
-        }
-
-        @Override
-        public void onLocationChanged(Location location) {
-            // TODO
-
-        }
-    };
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -137,6 +114,12 @@ public class LocationInfoFragment extends BaseInfoFragment implements OnMapReady
         return v;
     }
 
+    private void requestLocation(){
+        if(!LocationProducer.getInstance(getContext()).isLocating()){
+            LocationProducer.getInstance(getContext()).start();
+        }
+    }
+
     private void initView(View v) {
         Button recordButton = (Button) v.findViewById(R.id.record);
         recordButton.setOnClickListener(new View.OnClickListener() {
@@ -181,14 +164,7 @@ public class LocationInfoFragment extends BaseInfoFragment implements OnMapReady
     }
 
     private Location getCurrentLocation() {
-        String locationProvider = getProvider();
-        if (locationProvider.isEmpty()) {
-            return null;
-        }
-        if (!hasPermission()) {
-            return null;
-        }
-        return locationManager.getLastKnownLocation(locationProvider);
+        return LocationProducer.getInstance(getContext()).getLastKnowLocation();
     }
 
     private void requestPlace() {
@@ -299,31 +275,6 @@ public class LocationInfoFragment extends BaseInfoFragment implements OnMapReady
         }
     }
 
-    private void requestLocation() {
-        //获取地理位置管理器
-        locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
-        String locationProvider = getProvider();
-        if (locationProvider.isEmpty()) {
-            return;
-        }
-        if (hasPermission()) {
-            locationManager.requestLocationUpdates(locationProvider, Global.LOCATION_REQUEST_TIME, 0, locationListener);
-        }
-    }
-
-    private String getProvider() {
-        //获取所有可用的位置提供器
-        List<String> providers = locationManager.getProviders(true);
-        String locationProvider = "";
-        if (providers.contains(LocationManager.GPS_PROVIDER)) {
-            locationProvider = LocationManager.GPS_PROVIDER;
-        }
-        if (providers.contains(LocationManager.NETWORK_PROVIDER)) {
-            locationProvider = LocationManager.NETWORK_PROVIDER;
-        }
-        return locationProvider;
-    }
-
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
@@ -345,7 +296,7 @@ public class LocationInfoFragment extends BaseInfoFragment implements OnMapReady
             @Override
             public void onMapClick(LatLng latLng) {
                 Toast.makeText(getActivity(), "Event location change to "+latLng.latitude+","+latLng.longitude, Toast.LENGTH_SHORT).show();
-                Location location = new Location(getProvider());
+                Location location = new Location(LocationProducer.getInstance(getContext()).getProvider());
                 location.setLatitude(latLng.latitude);
                 location.setLongitude(latLng.longitude);
                 recordPosition(location);
