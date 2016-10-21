@@ -52,6 +52,9 @@ public class LocationProducer {
     }
 
     public Location getLatestLocation(){
+        if(latestLocation == null){
+            latestLocation = getLastKnowLocation();
+        }
         return latestLocation;
     }
 

@@ -14,8 +14,14 @@ public class Photo extends Model {
     @Column(name = "url")
     public String url;
 
-    @Column(name = "position")
-    public Position position;
+    @Column(name = "thumbUrl")
+    public String thumbUrl;
+
+    @Column(name = "latitude")
+    public double latitude;
+
+    @Column(name = "longitude")
+    public double longitude;
 
     @Column(name = "timestamp")
     public long timestamp;
@@ -31,10 +37,6 @@ public class Photo extends Model {
         return timestamp;
     }
 
-    public Position getPosition() {
-        return position;
-    }
-
     public String getDescription() {
         return description;
     }
@@ -43,15 +45,35 @@ public class Photo extends Model {
         this.description = description;
     }
 
-    public void setPosition(Position position) {
-        this.position = position;
-    }
-
     public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
     }
 
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    public double getLatitude() {
+        return latitude;
+    }
+
+    public void setLatitude(double latitude) {
+        this.latitude = latitude;
+    }
+
+    public double getLongitude() {
+        return longitude;
+    }
+
+    public void setLongitude(double longitude) {
+        this.longitude = longitude;
+    }
+
+    public String getThumbUrl() {
+        return thumbUrl;
+    }
+
+    public void setThumbUrl(String thumbUrl) {
+        this.thumbUrl = thumbUrl;
     }
 }

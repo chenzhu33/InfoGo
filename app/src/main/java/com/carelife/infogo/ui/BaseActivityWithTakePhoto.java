@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
+import android.location.Location;
 import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Bundle;
@@ -22,6 +23,7 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.carelife.infogo.R;
+import com.carelife.infogo.dom.Photo;
 import com.carelife.infogo.utils.LocationProducer;
 
 import java.io.File;
@@ -68,7 +70,7 @@ public abstract class BaseActivityWithTakePhoto extends AppCompatActivity implem
                 Toast.makeText(this,"Description can not be null", Toast.LENGTH_SHORT).show();
             }else {
                 genThumb();
-                saveToDb();
+                saveToDb(description);
                 Toast.makeText(this,"Save successfully", Toast.LENGTH_SHORT).show();
                 savePhotoDialog.dismiss();
             }
@@ -103,8 +105,16 @@ public abstract class BaseActivityWithTakePhoto extends AppCompatActivity implem
         }
     }
 
-    private void saveToDb(){
-
+    private void saveToDb(String description){
+        Location location = LocationProducer.getInstance(this).getLastKnowLocation();
+        Photo photo = new Photo();
+        photo.description = description;
+        photo.latitude = location.getLatitude();
+        photo.longitude = location.getLongitude();
+        photo.thumbUrl = photoThumbPath;
+        photo.url = photoPath;
+        photo.timestamp = timeStamp;
+        photo.save();
     }
 
     protected void takePhoto(){
