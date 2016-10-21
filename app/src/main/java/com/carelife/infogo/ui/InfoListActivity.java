@@ -123,18 +123,18 @@ public class InfoListActivity extends AppCompatActivity {
                                 fragment = new LocationInfoFragment();
                                 break;
                             case 2:
-                                fragment = new InfoDetailFragment();
+                                fragment = new WifiDetailFragment();
                                 break;
                             case 3:
-                                fragment = new InfoDetailFragment();
+                                fragment = new BluetoothDetailFragment();
                                 break;
                             default:
                                 fragment = new LocationInfoFragment();
                                 break;
                         }
-                        Bundle arguments = new Bundle();
-                        arguments.putInt(InfoDetailFragment.ARG_ITEM_ID, id);
-                        fragment.setArguments(arguments);
+//                        Bundle arguments = new Bundle();
+//                        arguments.putInt(InfoDetailFragment.ARG_ITEM_ID, id);
+//                        fragment.setArguments(arguments);
                         getSupportFragmentManager().beginTransaction()
                                 .replace(R.id.position_detail_container, fragment)
                                 .commit();
