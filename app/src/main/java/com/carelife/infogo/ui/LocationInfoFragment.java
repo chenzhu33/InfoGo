@@ -3,10 +3,13 @@ package com.carelife.infogo.ui;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
@@ -21,6 +24,7 @@ import com.carelife.infogo.R;
 import com.carelife.infogo.dom.Position;
 import com.carelife.infogo.utils.Global;
 import com.carelife.infogo.utils.LocationProducer;
+import com.carelife.infogo.utils.Tools;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
@@ -38,15 +42,19 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * 添加,google map显示的activity
  */
 public class LocationInfoFragment extends BaseInfoFragment implements OnMapReadyCallback, GoogleApiClient.OnConnectionFailedListener {
     private String TAG = "Lation";
+    private static final int UPDATE_TRACK_LINE = 1000;
 
     private GoogleMap mMap;
     private MapView mapView;
@@ -54,11 +62,37 @@ public class LocationInfoFragment extends BaseInfoFragment implements OnMapReady
     private Marker previousMarker;
     private Marker selectedMarker;
     private GoogleApiClient mGoogleApiClient;
+    private Location oldPoint;
+    private Location newPoint;
+    private Timer timer;
+
+    private Handler handler = new Handler(){
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            switch (msg.what){
+                case UPDATE_TRACK_LINE:
+                    newPoint = LocationProducer.getInstance(getContext()).getLatestLocation();
+                    if(newPoint == null){
+                        newPoint = LocationProducer.getInstance(getContext()).getLastKnowLocation();
+                    }
+                    LatLng oldLatLng = new LatLng(oldPoint.getLatitude(),oldPoint.getLongitude());
+                    LatLng newLatLng = new LatLng(newPoint.getLatitude(),newPoint.getLongitude());
+                    if(Tools.getDistance(oldLatLng.latitude,oldLatLng.longitude,
+                            newLatLng.latitude,newLatLng.longitude) < 50){
+                        markLineOnMap(oldPoint, newPoint);
+                    }
+                    oldPoint = newPoint;
+                    break;
+            }
+        }
+    };
 
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        timer = new Timer();
     }
 
     @Override
@@ -77,6 +111,9 @@ public class LocationInfoFragment extends BaseInfoFragment implements OnMapReady
     public void onDestroy() {
         super.onDestroy();
         mapView.onDestroy();
+        if(timer != null){
+            timer.cancel();
+        }
     }
 
     @Override
@@ -120,6 +157,14 @@ public class LocationInfoFragment extends BaseInfoFragment implements OnMapReady
         }
     }
 
+    private void markLineOnMap(Location oldPoint, Location newPoint){
+        PolylineOptions options = new PolylineOptions();
+        options.add(new LatLng(oldPoint.getLatitude(),oldPoint.getLongitude()),
+                new LatLng(newPoint.getLatitude(),newPoint.getLongitude()))
+                .width(10).color(Color.RED);
+        mMap.addPolyline(options);
+    }
+
     private void initView(View v) {
         Button recordButton = (Button) v.findViewById(R.id.record);
         recordButton.setOnClickListener(new View.OnClickListener() {
@@ -150,7 +195,14 @@ public class LocationInfoFragment extends BaseInfoFragment implements OnMapReady
         startTrackButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // TODO
+                oldPoint = newPoint = LocationProducer.getInstance(getContext()).getLastKnowLocation();
+                timer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        handler.sendEmptyMessage(UPDATE_TRACK_LINE);
+                    }
+                },0,5000);
+                Toast.makeText(getContext(),"start...",Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -158,7 +210,10 @@ public class LocationInfoFragment extends BaseInfoFragment implements OnMapReady
         stopTrackButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // TODO
+                if(timer != null){
+                    timer.cancel();
+                }
+                Toast.makeText(getContext(),"stop...",Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -342,4 +397,5 @@ public class LocationInfoFragment extends BaseInfoFragment implements OnMapReady
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
         Log.e(TAG,connectionResult.getErrorMessage());
     }
+
 }
