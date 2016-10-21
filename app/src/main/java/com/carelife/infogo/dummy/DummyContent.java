@@ -2,7 +2,9 @@ package com.carelife.infogo.dummy;
 
 import com.carelife.infogo.dom.BaseInfo;
 import com.carelife.infogo.dom.BlueToothInfo;
+import com.carelife.infogo.dom.IndoorPositionInfo;
 import com.carelife.infogo.dom.LocationInfo;
+import com.carelife.infogo.dom.TakePhotoInfo;
 import com.carelife.infogo.dom.WifiInfo;
 
 import java.util.ArrayList;
@@ -32,6 +34,8 @@ public class DummyContent {
         addItem(new LocationInfo());
         addItem(new WifiInfo());
         addItem(new BlueToothInfo());
+        addItem(new TakePhotoInfo());
+        addItem(new IndoorPositionInfo());
     }
 
     private static void addItem(BaseInfo item) {

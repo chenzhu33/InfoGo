@@ -1,12 +1,13 @@
 package com.carelife.infogo.ui;
 
 import android.Manifest;
-import android.content.Context;
+import android.app.AlertDialog;
+import android.app.PendingIntent;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -17,10 +18,14 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.ListView;
+import android.widget.SimpleAdapter;
 import android.widget.Toast;
 
 import com.activeandroid.query.Select;
 import com.carelife.infogo.R;
+import com.carelife.infogo.dom.Photo;
 import com.carelife.infogo.dom.Position;
 import com.carelife.infogo.utils.Global;
 import com.carelife.infogo.utils.LocationProducer;
@@ -29,6 +34,10 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.Geofence;
+import com.google.android.gms.location.GeofencingRequest;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.PlaceLikelihood;
 import com.google.android.gms.location.places.PlaceLikelihoodBuffer;
@@ -45,15 +54,18 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
 /**
  * 添加,google map显示的activity
  */
-public class LocationInfoFragment extends BaseInfoFragment implements OnMapReadyCallback, GoogleApiClient.OnConnectionFailedListener {
-    private String TAG = "Lation";
+public class LocationInfoFragment extends BaseInfoFragment implements OnMapReadyCallback, GoogleApiClient.OnConnectionFailedListener, ResultCallback<Status> {
+    private static final String TAG = "Location";
+
     private static final int UPDATE_TRACK_LINE = 1000;
 
     private GoogleMap mMap;
@@ -65,6 +77,8 @@ public class LocationInfoFragment extends BaseInfoFragment implements OnMapReady
     private Location oldPoint;
     private Location newPoint;
     private Timer timer;
+    private List<Geofence> mGeofenceList = new ArrayList<>();
+    private PendingIntent mGeofencePendingIntent;
 
     private Handler handler = new Handler(){
         @Override
@@ -143,11 +157,12 @@ public class LocationInfoFragment extends BaseInfoFragment implements OnMapReady
         // Create a GoogleApiClient instance
         mGoogleApiClient = new GoogleApiClient
                 .Builder(getContext())
+                .addApi(LocationServices.API)
                 .addApi(Places.GEO_DATA_API)
                 .addApi(Places.PLACE_DETECTION_API)
                 .enableAutoManage(getActivity(), this)
                 .build();
-
+        initHot();
         return v;
     }
 
@@ -254,13 +269,93 @@ public class LocationInfoFragment extends BaseInfoFragment implements OnMapReady
         Position position = (Position) selectedMarker.getTag();
         position.setHot(true);
         position.save();
+
+        addGeofence(position);
+        requestGeofence();
+    }
+
+    private void addGeofence(Position position) {
+        mGeofenceList.add(new Geofence.Builder()
+                // Set the request ID of the geofence. This is a string to identify this
+                // geofence.
+                .setRequestId(position.getId() + "")
+                .setCircularRegion(position.getLat(), position.getLon(), Global.GEOFENCE_RADIUS_IN_METERS)
+                .setExpirationDuration(Global.GEOFENCE_EXPIRATION_IN_MILLISECONDS)
+                .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER |
+                        Geofence.GEOFENCE_TRANSITION_EXIT)
+                .build());
+    }
+
+    private void requestGeofence() {
+        GeofencingRequest.Builder builder = new GeofencingRequest.Builder();
+        builder.setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER);
+        builder.addGeofences(mGeofenceList);
+        GeofencingRequest request = builder.build();
+
+        LocationServices.GeofencingApi.addGeofences(
+                mGoogleApiClient,
+                request,
+                getGeofencePendingIntent()
+        ).setResultCallback(this);
+    }
+
+    private PendingIntent getGeofencePendingIntent() {
+        // Reuse the PendingIntent if we already have it.
+        if (mGeofencePendingIntent != null) {
+            return mGeofencePendingIntent;
+        }
+        Intent intent = new Intent(getActivity(), GeofenceTransitionsIntentService.class);
+        // We use FLAG_UPDATE_CURRENT so that we get the same pending intent back when
+        // calling addGeofences() and removeGeofences().
+        mGeofencePendingIntent = PendingIntent.getService(getActivity(), 0, intent, PendingIntent.
+                FLAG_UPDATE_CURRENT);
+        return mGeofencePendingIntent;
     }
 
     private void showPlaces(List<com.carelife.infogo.dom.Place> places) {
-        // TODO
+        LinearLayout linearLayoutMain = new LinearLayout(getContext());
+        linearLayoutMain.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        ListView listView = new ListView(getContext());
+        listView.setFadingEdgeLength(0);
 
+        List<Map<String, String>> dataList = new ArrayList<>();
+        for (int m = 0; m < places.size(); m++) {
+            Map<String, String> dataMap = new HashMap<>();
+            dataMap.put("name", places.get(m).getName());
+            dataMap.put("address", places.get(m).getAddress());
+            dataList.add(dataMap);
+        }
+
+        SimpleAdapter adapter = new SimpleAdapter(getContext(),
+                dataList, R.layout.place_item,
+                new String[]{"name", "address"},
+                new int[]{R.id.name, R.id.address});
+        listView.setAdapter(adapter);
+
+        linearLayoutMain.addView(listView);
+
+        final AlertDialog dialog = new AlertDialog.Builder(getContext())
+                .setTitle("Places").setView(linearLayoutMain)
+                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                    }
+                }).create();
+        dialog.show();
     }
 
+    private void initHot() {
+        mGeofenceList.clear();
+        List<Position> positions = new Select().from(Position.class).where("isHot = ?", "1").execute();
+        for (Position position : positions) {
+            addGeofence(position);
+            //requestGeofence();
+        }
+    }
+    
     private List<com.carelife.infogo.dom.Place> queryCache(Location current) {
         List<com.carelife.infogo.dom.Place> nearbyPlaces = new ArrayList<>();
         if(current == null) {
@@ -360,7 +455,11 @@ public class LocationInfoFragment extends BaseInfoFragment implements OnMapReady
         mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
             @Override
             public boolean onMarkerClick(Marker marker) {
-                selectedMarker = marker;
+                if (marker.getTag() instanceof Photo) {
+                    showDetailPhoto((Photo) marker.getTag());
+                } else if (marker.getTag() instanceof Position){
+                    selectedMarker = marker;
+                }
                 return false;
             }
         });
@@ -384,6 +483,15 @@ public class LocationInfoFragment extends BaseInfoFragment implements OnMapReady
                 .title("Last location")
                 .icon(BitmapDescriptorFactory.fromResource(R.mipmap.last_marker)));
         previousMarker.setTag(positions.get(length - 1));
+
+        List<Photo> photos = new Select().from(Photo.class).execute();
+        for(Photo photo : photos) {
+            mMap.addMarker(
+                    new MarkerOptions()
+                            .position(new LatLng(photo.getLatitude(), photo.getLongitude()))
+                            .icon(BitmapDescriptorFactory.fromFile(photo.getThumbUrl())))
+                    .setTag(photo);
+        }
     }
 
     private boolean hasPermission() {
@@ -393,9 +501,17 @@ public class LocationInfoFragment extends BaseInfoFragment implements OnMapReady
                 Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
     }
 
+    private void showDetailPhoto(Photo photo) {
+        // TODO show detail photo info
+    }
+
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
         Log.e(TAG,connectionResult.getErrorMessage());
     }
 
+    @Override
+    public void onResult(@NonNull Status status) {
+
+    }
 }

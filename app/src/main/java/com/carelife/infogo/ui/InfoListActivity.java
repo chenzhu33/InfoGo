@@ -34,6 +34,7 @@ import permissions.dispatcher.RuntimePermissions;
  */
 @RuntimePermissions
 public class InfoListActivity extends BaseActivityWithTakePhoto {
+    public static final String ARG_ITEM_ID = "item_id";
 
     /**
      * Whether or not the activity is in two-pane mode, i.e. running on a tablet
@@ -126,13 +127,16 @@ public class InfoListActivity extends BaseActivityWithTakePhoto {
                             case 3:
                                 fragment = new BluetoothDetailFragment();
                                 break;
+                            case 4:
+                                fragment = new TakePhotoFragment();
+                                break;
+                            case 5:
+                                fragment = new IndoorPositionFragment();
+                                break;
                             default:
                                 fragment = new LocationInfoFragment();
                                 break;
                         }
-//                        Bundle arguments = new Bundle();
-//                        arguments.putInt(InfoDetailFragment.ARG_ITEM_ID, id);
-//                        fragment.setArguments(arguments);
                         getSupportFragmentManager().beginTransaction()
                                 .replace(R.id.position_detail_container, fragment)
                                 .commit();
@@ -140,8 +144,7 @@ public class InfoListActivity extends BaseActivityWithTakePhoto {
                     } else {
                         Context context = v.getContext();
                         Intent intent = new Intent(context, InfoDetailActivity.class);
-                        intent.putExtra(InfoDetailFragment.ARG_ITEM_ID, holder.mItem.getId());
-
+                        intent.putExtra(ARG_ITEM_ID, holder.mItem.getId());
                         context.startActivity(intent);
                     }
                 }

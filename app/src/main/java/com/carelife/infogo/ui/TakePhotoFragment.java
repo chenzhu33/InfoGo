@@ -1,9 +1,6 @@
 package com.carelife.infogo.ui;
 
-import android.app.Activity;
-import android.support.design.widget.CollapsingToolbarLayout;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,7 +16,7 @@ import com.carelife.infogo.dummy.DummyContent;
  * in two-pane mode (on tablets) or a {@link InfoDetailActivity}
  * on handsets.
  */
-public class InfoDetailFragment extends BaseInfoFragment {
+public class TakePhotoFragment extends BaseInfoFragment {
     /**
      * The fragment argument representing the item ID that this fragment
      * represents.
@@ -35,7 +32,7 @@ public class InfoDetailFragment extends BaseInfoFragment {
      * Mandatory empty constructor for the fragment manager to instantiate the
      * fragment (e.g. upon screen orientation changes).
      */
-    public InfoDetailFragment() {
+    public TakePhotoFragment() {
     }
 
     @Override

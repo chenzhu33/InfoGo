@@ -43,7 +43,7 @@ public class InfoDetailActivity extends BaseActivityWithTakePhoto {
             // Create the detail fragment and add it to the activity
             // using a fragment transaction.
             BaseInfoFragment fragment;
-            int id = getIntent().getIntExtra(InfoDetailFragment.ARG_ITEM_ID, 1);
+            int id = getIntent().getIntExtra(InfoListActivity.ARG_ITEM_ID, 1);
             switch (id) {
                 case 1:
                     fragment = new LocationInfoFragment();
@@ -54,13 +54,16 @@ public class InfoDetailActivity extends BaseActivityWithTakePhoto {
                 case 3:
                     fragment = new BluetoothDetailFragment();
                     break;
+                case 4:
+                    fragment = new TakePhotoFragment();
+                    break;
+                case 5:
+                    fragment = new IndoorPositionFragment();
+                    break;
                 default:
                     fragment = new LocationInfoFragment();
                     break;
             }
-//            Bundle arguments = new Bundle();
-//            arguments.putInt(InfoDetailFragment.ARG_ITEM_ID, id);
-//            fragment.setArguments(arguments);
             getSupportFragmentManager().beginTransaction()
                     .add(R.id.position_detail_container, fragment)
                     .commit();
