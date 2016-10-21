@@ -4,11 +4,9 @@ import android.Manifest;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
-import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -35,7 +33,7 @@ import permissions.dispatcher.RuntimePermissions;
  * item details side-by-side using two vertical panes.
  */
 @RuntimePermissions
-public class InfoListActivity extends AppCompatActivity {
+public class InfoListActivity extends BaseActivityWithTakePhoto {
 
     /**
      * Whether or not the activity is in two-pane mode, i.e. running on a tablet
