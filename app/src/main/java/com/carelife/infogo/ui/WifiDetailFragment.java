@@ -30,9 +30,6 @@ import com.carelife.infogo.utils.LinkWifi;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by wangrh on 16/10/20.
- */
 public class WifiDetailFragment extends BaseInfoFragment implements View.OnClickListener{
 
     private WifiManager wifiManager;

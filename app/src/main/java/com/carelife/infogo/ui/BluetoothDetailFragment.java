@@ -29,9 +29,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-/**
- * Created by chris on 16/10/20.
- */
 public class BluetoothDetailFragment extends BaseInfoFragment implements View.OnClickListener{
 
     public  static final String SPP_UUID = "00001101-0000-1000-8000-00805F9B34FB";

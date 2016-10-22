@@ -2,9 +2,6 @@ package com.carelife.infogo.dom;
 
 import java.io.Serializable;
 
-/**
- * Created by wangrh on 2016/10/22.
- */
 public class WifiLocationModel implements Serializable{
 
     private String macAddress;

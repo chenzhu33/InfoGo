@@ -15,10 +15,6 @@ import com.google.android.gms.location.internal.ParcelableGeofence;
 
 import java.util.List;
 
-/**
- * Created by chenzhuwei on 16/10/20.
- */
-
 public class GeofenceTransitionsIntentService extends IntentService {
 
     private static final String TAG = "Geofence";

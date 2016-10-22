@@ -11,9 +11,6 @@ import android.support.v4.app.ActivityCompat;
 
 import java.util.List;
 
-/**
- * Created by wangrh on 2016/10/21.
- */
 public class LocationProducer {
 
     private Location latestLocation;

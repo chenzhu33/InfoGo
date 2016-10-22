@@ -20,9 +20,6 @@ import android.widget.TextView;
 import com.carelife.infogo.R;
 import com.carelife.infogo.utils.LinkWifi;
 
-/**
- * Created by wangrh on 2016/10/20.
- */
 public class WifiListAdapter extends BaseAdapter {
 
 	private Context context;

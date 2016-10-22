@@ -11,9 +11,6 @@ import java.io.ObjectInputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by wangrh on 2016/10/21.
- */
 public class Tools {
 
     private static final double EARTH_RADIUS = 6378137.0;
