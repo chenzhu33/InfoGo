@@ -2,10 +2,13 @@ package com.carelife.infogo.ui;
 
 import android.Manifest;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.app.PendingIntent;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.location.Location;
 import android.os.Bundle;
@@ -17,10 +20,13 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.activeandroid.query.Select;
@@ -47,6 +53,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.MapsInitializer;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
@@ -79,6 +86,10 @@ public class LocationInfoFragment extends BaseInfoFragment implements OnMapReady
     private Timer timer;
     private List<Geofence> mGeofenceList = new ArrayList<>();
     private PendingIntent mGeofencePendingIntent;
+    private Dialog dialog;
+    private View dialogView;
+    private ImageView dialogImage;
+    private TextView dialogTextView;
 
     private Handler handler = new Handler(){
         @Override
@@ -231,6 +242,13 @@ public class LocationInfoFragment extends BaseInfoFragment implements OnMapReady
                 Toast.makeText(getContext(),"stop...",Toast.LENGTH_SHORT).show();
             }
         });
+
+        dialogView = LayoutInflater.from(getContext()).inflate(R.layout.show_photo_detail_dialog, null);
+        dialogImage = (ImageView)dialogView.findViewById(R.id.detail_image);
+        dialogTextView = (TextView )dialogView.findViewById(R.id.detail_text);
+        dialog = new Dialog(getContext());
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(dialogView);
     }
 
     private Location getCurrentLocation() {
@@ -489,7 +507,7 @@ public class LocationInfoFragment extends BaseInfoFragment implements OnMapReady
             mMap.addMarker(
                     new MarkerOptions()
                             .position(new LatLng(photo.getLatitude(), photo.getLongitude()))
-                            .icon(BitmapDescriptorFactory.fromFile(photo.getThumbUrl())))
+                            .icon(BitmapDescriptorFactory.fromPath(photo.getThumbUrl())))
                     .setTag(photo);
         }
     }
@@ -502,7 +520,9 @@ public class LocationInfoFragment extends BaseInfoFragment implements OnMapReady
     }
 
     private void showDetailPhoto(Photo photo) {
-        // TODO show detail photo info
+        dialogImage.setImageBitmap(BitmapFactory.decodeFile(photo.getUrl()));
+        dialogTextView.setText(photo.getDescription());
+        dialog.show();
     }
 
     @Override
