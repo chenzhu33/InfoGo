@@ -19,7 +19,9 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import com.carelife.infogo.R;
+import com.carelife.infogo.dom.BluetoothModel;
 import com.carelife.infogo.ui.adapters.DeviceAdapter;
+import com.carelife.infogo.utils.LocationProducer;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -40,6 +42,7 @@ public class BluetoothDetailFragment extends BaseInfoFragment implements View.On
     private List<BluetoothDevice> pairedList = new ArrayList<>();
     private List<BluetoothDevice> availableList = new ArrayList<>();
     private Button scanButton;
+    private Button saveButton;
     private BluetoothAdapter bluetoothAdapter;
     private DeviceAdapter pairedAdapter;
     private DeviceAdapter availableAdapter;
@@ -71,6 +74,8 @@ public class BluetoothDetailFragment extends BaseInfoFragment implements View.On
         pairedListview.setAdapter(pairedAdapter);
         scanButton = (Button)view.findViewById(R.id.scan_button);
         scanButton.setOnClickListener(this);
+        saveButton = (Button)view.findViewById(R.id.save_button);
+        saveButton.setOnClickListener(this);
         registerBluetoothReceiver();
         getPairedDevices();
         scanDevices();
@@ -139,7 +144,33 @@ public class BluetoothDetailFragment extends BaseInfoFragment implements View.On
     public void onClick(View view) {
         if(view == scanButton){
             scanDevices();
+        }else if(view == saveButton){
+            if(availableList.size() > 0 || pairedList.size() >0){
+                List<BluetoothDevice> list = new ArrayList<>();
+                list.addAll(availableList);
+                list.addAll(pairedList);
+                saveToDb(list);
+                Toast.makeText(getContext(),"Save successfully",Toast.LENGTH_SHORT).show();
+            }else {
+                Toast.makeText(getContext(),"no data",Toast.LENGTH_SHORT).show();
+            }
         }
+    }
+
+    private void saveToDb(List<BluetoothDevice> list){
+        StringBuilder sb = new StringBuilder();
+        for (BluetoothDevice device : list){
+            sb.append(device.getName())
+                    .append("&&")
+                    .append(device.getAddress())
+                    .append("|");
+        }
+        BluetoothModel model = new BluetoothModel();
+        model.setData(sb.toString());
+        model.setTimestamp(System.currentTimeMillis());
+        model.setLatitude(LocationProducer.getInstance(getContext()).getLastKnowLocation().getLatitude());
+        model.setLongitude(LocationProducer.getInstance(getContext()).getLastKnowLocation().getLongitude());
+        model.save();
     }
 
     private void getPairedDevices() {

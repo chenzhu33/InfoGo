@@ -49,10 +49,10 @@ public class InfoDetailActivity extends BaseActivityWithTakePhoto {
                     fragment = new LocationInfoFragment();
                     break;
                 case 2:
-                    fragment = new WifiDetailFragment();
+                    fragment = new WifiFragementContainer();
                     break;
                 case 3:
-                    fragment = new BluetoothDetailFragment();
+                    fragment = new BluetoothFragementContainer();
                     break;
                 case 4:
                     fragment = new TakePhotoFragment();
