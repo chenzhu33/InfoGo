@@ -446,7 +446,7 @@ public class LocationInfoFragment extends BaseInfoFragment implements OnMapReady
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-        mMap.getUiSettings().setMyLocationButtonEnabled(false);
+        mMap.getUiSettings().setMyLocationButtonEnabled(true);
         if (hasPermission()) {
             mMap.setMyLocationEnabled(true);
             Location current = getCurrentLocation();
