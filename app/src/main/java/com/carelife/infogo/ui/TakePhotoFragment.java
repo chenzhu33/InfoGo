@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.annotation.Nullable;
+import android.support.v4.content.FileProvider;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -149,7 +150,8 @@ public class TakePhotoFragment extends BaseInfoFragment implements View.OnClickL
             photoFile.getParentFile().mkdirs();
         }
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        intent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(photoFile));
+        Uri uri = FileProvider.getUriForFile(getContext(), getContext().getApplicationContext().getPackageName() + ".provider", photoFile);
+        intent.putExtra(MediaStore.EXTRA_OUTPUT, uri);
         startActivityForResult(intent, 99);
     }
 
