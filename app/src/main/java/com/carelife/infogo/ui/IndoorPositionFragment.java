@@ -37,6 +37,7 @@ public class IndoorPositionFragment extends BaseInfoFragment {
     private List<ScanResult> newWifList = new ArrayList<>();
     private double latitude;
     private double longitude;
+    private String address;
 
 
     @Override
@@ -66,6 +67,12 @@ public class IndoorPositionFragment extends BaseInfoFragment {
 
     }
 
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        getContext().unregisterReceiver(wifiResultChange);
+    }
+
     private final BroadcastReceiver wifiResultChange = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -90,12 +97,14 @@ public class IndoorPositionFragment extends BaseInfoFragment {
             Toast.makeText(getContext(),"Can not find available wifi", Toast.LENGTH_SHORT).show();
         }else {
             List<WifiLocationModel> locationModelList = Tools.getWifiDatabase();
+            String macAdd = newWifList.get(0).BSSID;
             for (WifiLocationModel model : locationModelList){
-                String macAdd = newWifList.get(0).BSSID;
+                Log.e("AAAA", model.toString());
                 if(macAdd.equals(model.getMacAddress())){
+                    address = model.getAddress();
                     latitude = model.getLatitude();
                     longitude = model.getLongitude();
-                    markOnMap(latitude, longitude);
+                    markOnMap(address, latitude, longitude);
                     Toast.makeText(getContext(),"Indoor position successfully", Toast.LENGTH_SHORT).show();
                 }
             }
@@ -103,7 +112,7 @@ public class IndoorPositionFragment extends BaseInfoFragment {
         }
     }
 
-    private void markOnMap(double latitude, double longitude){
+    private void markOnMap(String address, double latitude, double longitude){
 
     }
 }
