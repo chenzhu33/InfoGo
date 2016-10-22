@@ -41,6 +41,9 @@ public class Tools {
             String modelString = models[i];
             String [] datas = modelString.split("&&");
             WifiLocationModel model = new WifiLocationModel();
+            if(datas == null || datas.length < 4) {
+                continue;
+            }
             model.setAddress(datas[0]);
             model.setMacAddress(datas[1]);
             model.setLatitude(Double.parseDouble(datas[2]));
