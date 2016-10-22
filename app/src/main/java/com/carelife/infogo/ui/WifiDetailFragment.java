@@ -22,10 +22,13 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import com.carelife.infogo.R;
+import com.carelife.infogo.dom.WifiModel;
 import com.carelife.infogo.ui.adapters.WifiListAdapter;
 import com.carelife.infogo.utils.LinkWifi;
+import com.carelife.infogo.utils.LocationProducer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,6 +42,7 @@ public class WifiDetailFragment extends BaseInfoFragment implements View.OnClick
     private List<ScanResult> newWifList = new ArrayList<>();
     private WifiListAdapter wifiListAdapter;
     private Button scanButton;
+    private Button saveButton;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -63,6 +67,8 @@ public class WifiDetailFragment extends BaseInfoFragment implements View.OnClick
         wifiListView = (ListView) view.findViewById(R.id.wifi_list);
         scanButton = (Button) view.findViewById(R.id.scan_button);
         scanButton.setOnClickListener(this);
+        saveButton = (Button)view.findViewById(R.id.save_button);
+        saveButton.setOnClickListener(this);
         wifiListAdapter = new WifiListAdapter(getContext(), newWifList, setWifiHandler);
         wifiListView.setAdapter(wifiListAdapter);
         regWifiReceiver();
@@ -75,6 +81,13 @@ public class WifiDetailFragment extends BaseInfoFragment implements View.OnClick
             if(wifiManager != null) {
                 wifiListAdapter.clear();
                 wifiManager.startScan();
+            }
+        }else if(view == saveButton){
+            if(newWifList.size() > 0){
+                saveToDb(newWifList);
+                Toast.makeText(getContext(),"Save successfully",Toast.LENGTH_SHORT).show();
+            }else {
+                Toast.makeText(getContext(),"no data",Toast.LENGTH_SHORT).show();
             }
         }
     }
@@ -103,8 +116,6 @@ public class WifiDetailFragment extends BaseInfoFragment implements View.OnClick
     private void showWifiList() {
         List<ScanResult> wifiList = wifiManager.getScanResults();
 
-        Log.e("AAAA","aaa");
-
         boolean isAdd;
 
         if (wifiList != null) {
@@ -125,7 +136,6 @@ public class WifiDetailFragment extends BaseInfoFragment implements View.OnClick
             }
         }
 
-
         int connectedId = wifiManager.getConnectionInfo().getNetworkId();
         ScanResult scanResult = null;
         for(ScanResult result : newWifList){
@@ -140,13 +150,30 @@ public class WifiDetailFragment extends BaseInfoFragment implements View.OnClick
 
     }
 
-    private void moveConnectedToFirst(ScanResult result) {
+    private void saveToDb(List<ScanResult> list){
+        StringBuilder sb = new StringBuilder();
+        for (ScanResult scanResult : list){
+            sb.append(scanResult.BSSID)
+                    .append("&&")
+                    .append(scanResult.SSID)
+                    .append("&&")
+                    .append(scanResult.level)
+                    .append("&&")
+                    .append(scanResult.capabilities)
+                    .append("|");
+        }
+        WifiModel model = new WifiModel();
+        model.setData(sb.toString());
+        model.setTimestamp(System.currentTimeMillis());
+        model.setLatitude(LocationProducer.getInstance(getContext()).getLastKnowLocation().getLatitude());
+        model.setLongitude(LocationProducer.getInstance(getContext()).getLastKnowLocation().getLongitude());
+        model.save();
+    }
 
+    private void moveConnectedToFirst(ScanResult result) {
         newWifList.remove(result);
         newWifList.add(0, result);
         wifiListAdapter.notifyDataSetChanged();
-
-
     }
 
     private void configWifiRelay(final ScanResult wifiInfo) {
