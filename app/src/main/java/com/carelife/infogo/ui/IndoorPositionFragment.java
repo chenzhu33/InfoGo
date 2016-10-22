@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.location.Location;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
@@ -18,7 +19,16 @@ import com.carelife.infogo.R;
 import com.carelife.infogo.dom.BaseInfo;
 import com.carelife.infogo.dom.WifiLocationModel;
 import com.carelife.infogo.dummy.DummyContent;
+import com.carelife.infogo.utils.LocationProducer;
 import com.carelife.infogo.utils.Tools;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapView;
+import com.google.android.gms.maps.MapsInitializer;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -31,14 +41,16 @@ import java.util.List;
  * in two-pane mode (on tablets) or a {@link InfoDetailActivity}
  * on handsets.
  */
-public class IndoorPositionFragment extends BaseInfoFragment {
+public class IndoorPositionFragment extends BaseInfoFragment implements OnMapReadyCallback {
 
     private WifiManager wifiManager;
     private List<ScanResult> newWifList = new ArrayList<>();
     private double latitude;
     private double longitude;
+    private MapView mapView;
+    private GoogleMap mMap;
+    private Marker previousMarker;
     private String address;
-
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -54,7 +66,19 @@ public class IndoorPositionFragment extends BaseInfoFragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View rootView = inflater.inflate(R.layout.info_detail, container, false);
+        View rootView = inflater.inflate(R.layout.indoor_fragment, container, false);
+
+        // Gets the MapView from the XML layout and creates it
+        mapView = (MapView) rootView.findViewById(R.id.map_view);
+        mapView.onCreate(savedInstanceState);
+
+        // Gets to GoogleMap from the MapView and does initialization stuff
+        mapView.getMapAsync(this);
+
+        // Needs to call MapsInitializer before doing any CameraUpdateFactory calls
+        MapsInitializer.initialize(this.getActivity());
+
+
         return rootView;
     }
 
@@ -113,6 +137,23 @@ public class IndoorPositionFragment extends BaseInfoFragment {
     }
 
     private void markOnMap(String address, double latitude, double longitude){
-
+        if(previousMarker != null) {
+            previousMarker.remove();
+        }
+        previousMarker = mMap.addMarker(
+                new MarkerOptions().position(new LatLng(latitude, longitude)).title(address));
+    }
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        mMap = googleMap;
+        mMap.getUiSettings().setMyLocationButtonEnabled(true);
+        if (LocationProducer.getInstance(getContext()).hasPermission()) {
+            mMap.setMyLocationEnabled(true);
+            Location current = LocationProducer.getInstance(getContext()).getLastKnowLocation();
+            if(current == null) {
+                return;
+            }
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(current.getLatitude(), current.getLongitude()), 13));
+        }
     }
 }
